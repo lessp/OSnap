@@ -17,113 +17,138 @@ let call_event_handlers = (key, message) => {
   );
 };
 
-let websocket_handler = (recv, send) => {
-  let close = () => {
-    Websocket.Frame.close(1002) |> send;
-  };
-
-  let send_payload = payload => {
-    Websocket.Frame.create(~content=payload, ()) |> send;
-  };
-
-  let rec input_loop = () => {
+let websocket_handler = (u, wsd) => {
+  let rec input_loop = wsd => {
     let%lwt () = Lwt.pause();
     if (!Queue.is_empty(close_requests)) {
+      Websocketaf.Wsd.close(wsd);
       close_requests |> Queue.iter(resolver => Lwt.wakeup_later(resolver, ()));
       close_requests |> Queue.clear;
-      close();
+      Lwt.return_unit;
     } else if (!Queue.is_empty(pending_requests)) {
       let (key, message, resolver) = Queue.take(pending_requests);
-      let%lwt () = send_payload(message);
+      let payload = Bytes.of_string(message);
+      Websocketaf.Wsd.send_bytes(
+        wsd,
+        ~kind=`Text,
+        payload,
+        ~off=0,
+        ~len=Bytes.length(payload),
+      );
       Hashtbl.add(sent_requests, key, resolver);
-      input_loop();
+      input_loop(wsd);
     } else {
-      input_loop();
+      input_loop(wsd);
+    };
+  };
+  Lwt.async(() => input_loop(wsd));
+
+  let handle_response = response => {
+    print_endline(response);
+    let id =
+      response
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.Util.member("id")
+      |> Yojson.Safe.Util.to_int_option;
+
+    let method =
+      response
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.Util.member("method")
+      |> Yojson.Safe.Util.to_string_option;
+
+    let sessionId =
+      response
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.Util.member("sessionId")
+      |> Yojson.Safe.Util.to_string_option;
+
+    switch (method, sessionId) {
+    | (None, None) => ()
+    | (None, _) => ()
+    | (Some(method), None) =>
+      let key = method;
+      Hashtbl.add(events, key, response);
+      Hashtbl.find_opt(listeners, key)
+      |> Option.iter(call_event_handlers(key, response));
+    | (Some(method), Some(sessionId)) =>
+      let key = method ++ sessionId;
+      Hashtbl.add(events, key, response);
+      Hashtbl.find_opt(listeners, key)
+      |> Option.iter(call_event_handlers(key, response));
+    };
+
+    switch (id) {
+    | None => ()
+    | Some(key) =>
+      Hashtbl.find_opt(sent_requests, key)
+      |> Option.iter(Lwt.wakeup_later(_, response));
+      Hashtbl.remove(sent_requests, key);
     };
   };
 
-  let react = (frame: Websocket.Frame.t) => {
-    switch (frame.opcode) {
-    | Close
-    | Continuation
-    | Ctrl(_)
-    | Nonctrl(_) => close()
-    | Ping => Websocket.Frame.create(~opcode=Pong, ()) |> send
-    | Pong => Lwt.return()
-    | Text
-    | Binary =>
-      let response = frame.Websocket.Frame.content;
-      let id =
-        response
-        |> Yojson.Safe.from_string
-        |> Yojson.Safe.Util.member("id")
-        |> Yojson.Safe.Util.to_int_option;
+  let frame = (~opcode as _, ~is_fin as _, ~len as _, payload) => {
+    let rev_payload_chunks = ref([]);
 
-      let method =
-        response
-        |> Yojson.Safe.from_string
-        |> Yojson.Safe.Util.member("method")
-        |> Yojson.Safe.Util.to_string_option;
-
-      let sessionId =
-        response
-        |> Yojson.Safe.from_string
-        |> Yojson.Safe.Util.member("sessionId")
-        |> Yojson.Safe.Util.to_string_option;
-
-      switch (method, sessionId) {
-      | (None, None) => ()
-      | (None, _) => ()
-      | (Some(method), None) =>
-        let key = method;
-        Hashtbl.add(events, key, response);
-        Hashtbl.find_opt(listeners, key)
-        |> Option.iter(call_event_handlers(key, response));
-      | (Some(method), Some(sessionId)) =>
-        let key = method ++ sessionId;
-        Hashtbl.add(events, key, response);
-        Hashtbl.find_opt(listeners, key)
-        |> Option.iter(call_event_handlers(key, response));
-      };
-
-      switch (id) {
-      | None => Lwt.return()
-      | Some(key) =>
-        Hashtbl.find_opt(sent_requests, key)
-        |> Option.iter(resolver => {Lwt.wakeup_later(resolver, response)});
-        Hashtbl.remove(sent_requests, key);
-        Lwt.return();
-      };
+    let on_eof = () => {
+      rev_payload_chunks^
+      |> List.rev
+      |> List.fold_left((acc, chunk) => acc ++ chunk, "")
+      |> handle_response;
     };
+
+    let rec on_read = (bs, ~off, ~len) => {
+      let current_payload = Bigstringaf.substring(bs, ~off, ~len);
+      rev_payload_chunks := [current_payload, ...rev_payload_chunks^];
+      payload |> Websocketaf.Payload.schedule_read(~on_eof, ~on_read);
+    };
+
+    payload |> Websocketaf.Payload.schedule_read(~on_eof, ~on_read);
   };
 
-  let rec react_forever = () => {
-    let%lwt frame = recv();
-    let%lwt () = react(frame);
-    react_forever();
-  };
+  let eof = Lwt.wakeup_later(u);
 
-  Lwt.pick([input_loop(), react_forever()]);
+  Websocketaf.Client_connection.{frame, eof};
+};
+
+let error_handler = error => {
+  switch (error) {
+  | `Exn(_exn) => assert(false)
+  | `Handshake_failure(_resp, _body) => assert(false)
+  | `Invalid_response_body_length(_resp) => assert(false)
+  | `Malformed_response(_string) => assert(false)
+  | _ => assert(false)
+  };
 };
 
 let connect = url => {
-  let orig_uri = Uri.of_string(url);
-  let uri = Uri.with_scheme(orig_uri, Some("http"));
+  let uri = Uri.of_string(url);
+  let port = uri |> Uri.port |> Option.value(~default=0);
+  let host = uri |> Uri.host_with_default(~default="");
+  let resource = uri |> Uri.path;
 
-  let%lwt endpoint = Resolver_lwt.resolve_uri(~uri, Resolver_lwt_unix.system);
-
-  let%lwt client =
-    endpoint
-    |> Conduit_lwt_unix.endp_to_client(~ctx=Conduit_lwt_unix.default_ctx);
-
-  let%lwt (recv, send) =
-    Websocket_lwt_unix.with_connection(
-      ~ctx=Conduit_lwt_unix.default_ctx,
-      client,
-      uri,
+  let%lwt addresses =
+    Lwt_unix.getaddrinfo(
+      host,
+      string_of_int(port),
+      [Unix.(AI_FAMILY(PF_INET))],
     );
+  let socket = Lwt_unix.socket(Unix.PF_INET, Unix.SOCK_STREAM, 0);
+  let%lwt () = Lwt_unix.connect(socket, List.hd(addresses).Unix.ai_addr);
 
-  websocket_handler(recv, send);
+  let (p, u) = Lwt.wait();
+
+  let _ =
+    socket
+    |> Websocketaf_lwt_unix.Client.connect(
+         ~nonce="0123456789ABCDEF",
+         ~host,
+         ~port,
+         ~resource,
+         ~error_handler,
+         ~websocket_handler=websocket_handler(u),
+       );
+  p;
 };
 
 let send = message => {

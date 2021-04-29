@@ -6,8 +6,8 @@
     lwt
     lwt.unix
     yojson
-    websocket
-    websocket-lwt-unix
+    websocketaf
+    websocketaf-lwt-unix
   )
   (preprocess (pps
     lwt_ppx
