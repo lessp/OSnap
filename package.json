@@ -42,7 +42,7 @@
   },
   "scripts": {
     "run": "esy x osnap",
-    "test": "esy x osnap --config ./test/osnap.config.json"
+    "test": "esy x osnap --config ./test/osnap.config.json -v"
   },
   "dependencies": {
     "@opam/base64": "3.5.0",
@@ -91,13 +91,11 @@
         }
       }
     },
-    "@opam/httpaf": "anmonteiro/httpaf:httpaf.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
-    "@opam/httpaf-lwt": "anmonteiro/httpaf:httpaf-lwt.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
-    "@opam/httpaf-lwt-unix": "anmonteiro/httpaf:httpaf-lwt-unix.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
+    "@opam/httpaf": "anmonteiro/httpaf:httpaf.opam#de783584c85f9af809f19f74205dfced4d266f09",
     "@opam/re": "ocaml/ocaml-re:re.opam#8a59309051ec573d3090d2550cb61b415a4c6837",
-    "@opam/websocketaf": "anmonteiro/websocketaf:websocketaf.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
-    "@opam/websocketaf-lwt": "anmonteiro/websocketaf:websocketaf-lwt.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
-    "@opam/websocketaf-lwt-unix": "anmonteiro/websocketaf:websocketaf-lwt-unix.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
+    "@opam/websocketaf": "anmonteiro/websocketaf:websocketaf.opam#248a2cb0dcffa51996c3ad7643577dce75d67454",
+    "@opam/websocketaf-lwt": "anmonteiro/websocketaf:websocketaf-lwt.opam#248a2cb0dcffa51996c3ad7643577dce75d67454",
+    "@opam/websocketaf-lwt-unix": "anmonteiro/websocketaf:websocketaf-lwt-unix.opam#248a2cb0dcffa51996c3ad7643577dce75d67454",
     "esy-libpng": "esy-packages/esy-libpng#d846df4a8547b3299c7627773008bd97543d7048"
   }
 }

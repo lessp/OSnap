@@ -24,8 +24,8 @@ let call_event_handlers = (key, message) => {
   );
 };
 
-let debug_send = OSnap_Logger.debug(~header="Websocket >>>");
-let debug_recieve = OSnap_Logger.debug(~header="Websocket <<<");
+let debug_send = OSnap_Logger.info(~header="Websocket >>>");
+let debug_recieve = OSnap_Logger.info(~header="Websocket <<<");
 
 let websocket_handler = (u, wsd) => {
   let rec input_loop = wsd => {
