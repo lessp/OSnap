@@ -8,36 +8,37 @@ module Launcher: {
 
 module Target: {
   type target = {
-    targetId: OSnap_CDP.Types.Target.TargetId.t,
-    sessionId: OSnap_CDP.Types.Target.SessionId.t,
+    targetId: Cdp.Types.Target.TargetID.t,
+    sessionId: Cdp.Types.Target.SessionID.t,
   };
 
   let make: t => Lwt.t(target);
 };
 
 module Actions: {
+  let get_quads:
+    (~selector: string, Target.target) =>
+    Lwt.t(((float, float), (float, float)));
+
   let click: (~selector: string, Target.target) => Lwt.t(unit);
 
   let type_text:
     (~selector: string, ~text: string, Target.target) => Lwt.t(unit);
 
-  let wait_for: (~event: string, Target.target) => Lwt.t(unit);
+  let wait_for:
+    (~timeout: float=?, ~look_behind: bool=?, ~event: string, Target.target) =>
+    Lwt.t([> | `Data(string) | `Timeout]);
 
   let wait_for_network_idle:
-    (Target.target, ~loaderId: OSnap_CDP.Types.Network.LoaderId.t) =>
-    Lwt.t(unit);
+    (Target.target, ~loaderId: Cdp.Types.Network.LoaderId.t) => Lwt.t(unit);
 
   let go_to: (~url: string, Target.target) => Lwt_result.t(string, string);
 
-  let set_size: (~width: int, ~height: int, Target.target) => Lwt.t(unit);
+  let get_content_size: Target.target => Lwt.t((float, float));
+
+  let set_size: (~width: float, ~height: float, Target.target) => Lwt.t(unit);
 
   let screenshot: (~full_size: bool=?, Target.target) => Lwt.t(string);
 };
 
-module Path: {
-  let get_revision: unit => string;
-
-  let get_folder_name: unit => string;
-
-  let get_chromium_path: unit => string;
-};
+module Download: {let download: unit => Lwt_result.t(unit, unit);};

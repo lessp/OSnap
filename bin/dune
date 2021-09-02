@@ -2,14 +2,9 @@
  (name Main)
  (modules Main)
  (public_name osnap)
- (libraries OSnap console.lib pastel.lib cmdliner)
- (preprocess
-  (pps lwt_ppx)))
-
-(executable
- (name DownloadChromium)
- (modules DownloadChromium)
- (public_name downloadChromium)
- (libraries OSnap camlzip httpaf httpaf-lwt-unix lwt)
+ (flags
+  (:standard -w +A-42-44-48-66-40 -warn-error +A-3-44-66-40))
+ (ocamlopt_flags -O3)
+ (libraries OSnap cmdliner fmt logs logs.cli logs.fmt)
  (preprocess
   (pps lwt_ppx)))

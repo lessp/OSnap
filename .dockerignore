@@ -1,0 +1,12 @@
+.merlin
+node_modules/
+_esy
+_release
+*.byte
+*.native
+*.install
+.DS_Store
+docker/
+.github
+.vscode
+.editorconfig

@@ -1,3 +1,10 @@
+let id = ref(0);
+
+let id = () => {
+  incr(id);
+  id^;
+};
+
 let close_requests = Queue.create();
 let pending_requests = Queue.create();
 let sent_requests = Hashtbl.create(10);
@@ -17,6 +24,9 @@ let call_event_handlers = (key, message) => {
   );
 };
 
+let debug_send = OSnap_Logger.debug(~header="Websocket >>>");
+let debug_recieve = OSnap_Logger.debug(~header="Websocket <<<");
+
 let websocket_handler = (u, wsd) => {
   let rec input_loop = wsd => {
     let%lwt () = Lwt.pause();
@@ -27,6 +37,7 @@ let websocket_handler = (u, wsd) => {
       Lwt.return_unit;
     } else if (!Queue.is_empty(pending_requests)) {
       let (key, message, resolver) = Queue.take(pending_requests);
+      debug_send(message);
       let payload = Bytes.of_string(message);
       Websocketaf.Wsd.send_bytes(
         wsd,
@@ -44,7 +55,9 @@ let websocket_handler = (u, wsd) => {
   Lwt.async(() => input_loop(wsd));
 
   let handle_response = response => {
-    print_endline(response);
+    debug_recieve(
+      String.sub(response, 0, min(String.length(response), 800)),
+    );
     let id =
       response
       |> Yojson.Safe.from_string
@@ -152,18 +165,14 @@ let connect = url => {
 };
 
 let send = message => {
-  let key =
-    message
-    |> Yojson.Safe.from_string
-    |> Yojson.Safe.Util.member("id")
-    |> Yojson.Safe.Util.to_int;
-
+  let key = id();
+  let message = message(key);
   let (p, resolver) = Lwt.wait();
   pending_requests |> Queue.add((key, message, resolver));
   p;
 };
 
-let listen = (~event, ~sessionId, handler) => {
+let listen = (~look_behind=true, ~event, ~sessionId, handler) => {
   let key = event ++ sessionId;
   let stored_listeners = Hashtbl.find_opt(listeners, key);
   switch (stored_listeners) {
@@ -171,16 +180,18 @@ let listen = (~event, ~sessionId, handler) => {
   | Some(stored) => Hashtbl.replace(listeners, key, [handler, ...stored])
   };
 
-  Hashtbl.find_all(events, key)
-  |> List.iter(event => {
-       handler(
-         event,
-         () => {
-           Hashtbl.remove(listeners, key);
-           Hashtbl.remove(events, key);
-         },
-       )
-     });
+  if (look_behind) {
+    Hashtbl.find_all(events, key)
+    |> List.iter(event => {
+         handler(
+           event,
+           () => {
+             Hashtbl.remove(listeners, key);
+             Hashtbl.remove(events, key);
+           },
+         )
+       });
+  };
 };
 
 let close = () => {

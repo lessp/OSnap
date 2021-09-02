@@ -1,15 +1,38 @@
 {
   "name": "@space-labs/osnap",
-  "version": "1.0.0-alpha+1",
-  "description": "A Snapshot testing tool focusing on speed and ease of use.",
+  "version": "1.2.0",
+  "description": "The speedy and easy to use snapshot testing tool for your project!",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eWert-Online/OSnap"
+  },
+  "author": {
+    "name": "Torben Ewert",
+    "email": "torben@ewert-online.com"
+  },
+  "bugs": {
+    "url": "https://github.com/eWert-Online/OSnap/issues"
+  },
+  "keywords": [
+    "testing",
+    "diff",
+    "snapshot",
+    "snapshot-testing",
+    "image-comparison",
+    "visual-regression-testing",
+    "visual-comparison-testing",
+    "image-snapshots",
+    "ocaml",
+    "reason",
+    "reasonml"
+  ],
   "esy": {
     "build": "dune build -p osnap",
     "buildDev": "dune build --promote-install-files --root . --only-package osnap",
     "release": {
       "bin": {
-        "osnap": "osnap",
-        "downloadChromium": "downloadChromium"
+        "osnap": "osnap"
       },
       "includePackages": [
         "root",
@@ -23,41 +46,41 @@
   },
   "dependencies": {
     "@opam/base64": "3.5.0",
-    "@opam/camlimages": "*",
     "@opam/camlzip": "*",
     "@opam/cmdliner": "1.0.4",
+    "@opam/cohttp": "4.0.0",
+    "@opam/cohttp-lwt-unix": "4.0.0",
+    "@opam/conf-gmp-powm-sec": "2",
     "@opam/fileutils": "0.6.3",
-    "@opam/httpaf": "*",
-    "@opam/httpaf-lwt-unix": "*",
-    "@opam/lwt": "5.4.0",
-    "@opam/lwt_ppx": "2.0.1",
+    "@opam/fmt": "0.8.9",
+    "@opam/imagelib": "20210511",
+    "@opam/logs": "0.7.0",
+    "@opam/lwt": "5.4.2",
+    "@opam/lwt_ppx": "2.0.2",
     "@opam/ppx_yojson_conv": "v0.14.0",
     "@opam/re": "*",
     "@opam/tls": "*",
-    "@opam/uri": "4.1.0",
+    "@opam/uri": "4.2.0",
     "@opam/websocketaf": "*",
     "@opam/websocketaf-lwt-unix": "*",
     "@opam/yojson": "1.7.0",
-    "@reason-native/console": "jfrolich/reason-native:console.opam#3e338dcfdb91416a22758a819b2d64f472a34e1c",
-    "@reason-native/pastel": "jfrolich/reason-native:pastel.opam#3e338dcfdb91416a22758a819b2d64f472a34e1c",
+    "@opam/zarith": "1.11",
+    "cdp": "eWert-Online/reason-cdp#2e28647d86d2a040a988337b97fc14d1b9b2ff56",
     "esy-libpng": "*",
-    "odiff-core": "ewert-online/odiff:odiff-core.opam#43859385306fed40146264aebb8b8faf941e6a87"
+    "odiff-core": "dmtrKovalenko/odiff:odiff-core.opam#347f5ac44f6f506b9ca5c96c9fa1c23585a38117"
   },
   "devDependencies": {
     "@opam/reason": ">= 3.6.0 < 4.0.0",
     "@opam/dune": "< 3.0.0",
-    "@opam/ocaml-lsp-server": "*",
-    "ocaml": ">= 4.2.0 < 5.0.0"
+    "@opam/ocaml-lsp-server": "1.5.0",
+    "ocaml": "4.12.0"
   },
   "resolutions": {
-    "@opam/camlimages": {
-      "source": "git+https://gitlab.com/camlspotter/camlimages.git:camlimages.opam#9d8dce704a335b7c568e8d3692fe086b1d084870",
-      "override": {
-        "dependencies": {
-          "esy-libpng": "*"
-        }
-      }
-    },
+    "@opam/mirage-crypto": "mirage/mirage-crypto:mirage-crypto.opam#42563a78f0ee9e106e045f4bda3284dd58935ca4",
+    "@opam/mirage-crypto-rng": "mirage/mirage-crypto:mirage-crypto-rng.opam#42563a78f0ee9e106e045f4bda3284dd58935ca4",
+    "@opam/mirage-crypto-pk": "mirage/mirage-crypto:mirage-crypto-pk.opam#42563a78f0ee9e106e045f4bda3284dd58935ca4",
+    "@opam/mirage-crypto-ec": "mirage/mirage-crypto:mirage-crypto-ec.opam#42563a78f0ee9e106e045f4bda3284dd58935ca4",
+    "ocaml": "4.12.0-musl.static.flambda",
     "@opam/camlzip": {
       "source": "rvantonder/camlzip:camlzip.opam#6b7ed9c8537d23b9f1781257f4f978ea0f493195",
       "override": {
@@ -71,7 +94,7 @@
     "@opam/httpaf": "anmonteiro/httpaf:httpaf.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
     "@opam/httpaf-lwt": "anmonteiro/httpaf:httpaf-lwt.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
     "@opam/httpaf-lwt-unix": "anmonteiro/httpaf:httpaf-lwt-unix.opam#ee3e790669dedfae5210d1431ea7f3e1f346a95e",
-    "@opam/re": "ocaml/ocaml-re:re.opam#09c2745a2d8d1517b3d597396e82e122903b0017",
+    "@opam/re": "ocaml/ocaml-re:re.opam#8a59309051ec573d3090d2550cb61b415a4c6837",
     "@opam/websocketaf": "anmonteiro/websocketaf:websocketaf.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
     "@opam/websocketaf-lwt": "anmonteiro/websocketaf:websocketaf-lwt.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
     "@opam/websocketaf-lwt-unix": "anmonteiro/websocketaf:websocketaf-lwt-unix.opam#ad4e61eace163611f797dcdf6af801b95d6aee63",
